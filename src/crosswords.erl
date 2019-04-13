@@ -13,7 +13,7 @@ filter_words(WordList, MaxLength) ->
 
 generate_crossword(GridSize, TotalWords) ->
     WordList = load_words(),
-    generate_crossword(filter_words(WordList, GridSize), GridSize, TotalWords, [], empty_grid(GridSize)).
+    generate_crossword(filter_words(WordList, GridSize), GridSize, TotalWords, [], #{}).
 
 generate_crossword(WordList, GridSize, TotalWords, ChosenWords, Crossword) ->
     case add_word(WordList, GridSize, ChosenWords, Crossword, 100) of
@@ -25,13 +25,6 @@ generate_crossword(WordList, GridSize, TotalWords, ChosenWords, Crossword) ->
         false -> {ChosenWords, Crossword}
     end.
 
-empty_grid(GridSize) ->
-    Xs = lists:seq(0, GridSize - 1),
-    maps:from_list(lists:flatten(lists:map(fun(X) ->
-        Ys = lists:seq(0, GridSize - 1),
-        lists:map(fun(Y) -> {{X, Y}, <<" ">>} end, Ys)
-    end, Xs))).
-
 add_word(WordList, GridSize, ChosenWords, Crossword, DepthLimit) ->
     case DepthLimit of
         0 -> false;
@@ -40,16 +33,21 @@ add_word(WordList, GridSize, ChosenWords, Crossword, DepthLimit) ->
             Y = choose(lists:seq(0, GridSize - 1)),
             Direction = choose([up, down, left, right]),
             PossibleWords = filter_words(WordList, max_word_length({X, Y}, Direction, GridSize)),
-            case length(PossibleWords) of
-                0 -> false;
-                _ ->
-                    Word = {{X,Y}, Direction, choose(PossibleWords)},
-                    {true, [Word | ChosenWords], add_word_to_grid(Word, Crossword)}
+            add_new_word(PossibleWords, {X, Y}, Direction, Crossword, ChosenWords)
+    end.
+
+add_new_word(PossibleWords, Pos, Direction, Crossword, ChosenWords) ->
+    case length(PossibleWords) of
+        0 -> false;
+        _ ->
+            Word = {Pos, Direction, choose(PossibleWords)},
+            case add_word_to_grid(Word, Crossword) of
+                {true, NewCrossword} -> {true, [Word | ChosenWords], NewCrossword};
+                false -> add_new_word(PossibleWords, Pos, Direction, Crossword, ChosenWords)
             end
     end.
 
-add_word_to_grid({{X, Y}, Direction, [Letter|Letters]}, Grid) ->
-    NewGrid = maps:put({X, Y}, Letter, Grid),
+add_word_to_grid({{X, Y} = Position, Direction, [Letter|Letters]}, Grid) ->
     NextPosition = case Direction of
         up ->
             {X - 1, Y};
@@ -60,10 +58,20 @@ add_word_to_grid({{X, Y}, Direction, [Letter|Letters]}, Grid) ->
         right ->
             {X, Y + 1}
     end,
-    add_word_to_grid({NextPosition, Direction, Letters}, NewGrid);
+    case maps:is_key(Position, Grid) of
+        false ->
+            NewGrid = maps:put({X, Y}, Letter, Grid),
+            add_word_to_grid({NextPosition, Direction, Letters}, NewGrid);
+        true ->
+            case maps:get(Position, Grid) of
+                Letter ->
+                    add_word_to_grid({NextPosition, Direction, Letters}, Grid);
+                _ -> false
+            end
+    end;
 
 add_word_to_grid({_Pos, _Direction, []}, Grid) ->
-    Grid.
+    {true, Grid}.
 
 choose(X) ->
     lists:nth(rand:uniform(length(X)), X).
