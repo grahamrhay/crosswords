@@ -11,20 +11,12 @@ prop_true() ->
 
 generate_crossword_test() ->
     GridSize = 7,
-    WordList = crosswords:word_list(GridSize),
-    render(GridSize, crosswords:generate_crossword(WordList, GridSize)).
+    render(GridSize, crosswords:generate_crossword(GridSize, 1)).
 
-render(GridSize, _Crossword) ->
-    Grid = empty_grid(GridSize),
+render(GridSize, {ChosenWords, Crossword}) ->
+    ?debugFmt("~p", [lists:reverse(ChosenWords)]),
     lists:foreach(fun(X) ->
         Ys = lists:seq(0, GridSize - 1),
-        Row = lists:map(fun(Y) -> maps:get({X, Y}, Grid) end, Ys),
-        ?debugFmt("~p", [Row])
+        Row = lists:map(fun(Y) -> maps:get({X, Y}, Crossword) end, Ys),
+        ?debugFmt("~s", [Row])
     end, lists:seq(0, GridSize - 1)).
-
-empty_grid(GridSize) ->
-    Xs = lists:seq(0, GridSize - 1),
-    maps:from_list(lists:flatten(lists:map(fun(X) ->
-        Ys = lists:seq(0, GridSize - 1),
-        lists:map(fun(Y) -> {{X, Y}, <<" ">>} end, Ys)
-    end, Xs))).
