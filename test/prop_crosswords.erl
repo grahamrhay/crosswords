@@ -11,7 +11,7 @@ prop_true() ->
 
 generate_crossword_test() ->
     GridSize = 7,
-    render(GridSize, crosswords:generate_crossword(GridSize, 10)).
+    render(GridSize, crosswords:generate_crossword(GridSize)).
 
 render(GridSize, {ChosenWords, Crossword}) ->
     ?debugFmt("~p", [lists:reverse(ChosenWords)]),
