@@ -9,9 +9,11 @@ prop_true() ->
             true
         end).
 
-generate_crossword_test() ->
+generate_crossword_test_() ->
     GridSize = 7,
-    render(GridSize, crosswords:generate_crossword(GridSize)).
+    {timeout, 10, begin
+        render(GridSize, crosswords:generate_crossword(GridSize))
+    end}.
 
 render(GridSize, {ChosenWords, Crossword}) ->
     ?debugFmt("~p", [lists:reverse(ChosenWords)]),

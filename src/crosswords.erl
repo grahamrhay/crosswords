@@ -32,7 +32,7 @@ generate_crossword(WordList, GridSize, ChosenWords, Crossword, Failures) ->
 add_word(WordList, GridSize, ChosenWords, Crossword) ->
     X = choose(lists:seq(0, GridSize - 1)),
     Y = choose(lists:seq(0, GridSize - 1)),
-    Direction = choose([up, down, left, right]),
+    Direction = choose([across, down]),
     PossibleWords = filter_words(WordList, max_word_length({X, Y}, Direction, GridSize)),
     add_new_word(PossibleWords, {X, Y}, Direction, Crossword, ChosenWords).
 
@@ -53,14 +53,10 @@ add_new_word(PossibleWords, Pos, Direction, Crossword, ChosenWords) ->
 
 add_word_to_grid({{X, Y} = Position, Direction, [Letter|Letters]}, Grid) ->
     NextPosition = case Direction of
-        up ->
-            {X - 1, Y};
+        across ->
+            {X, Y + 1};
         down ->
-            {X + 1, Y};
-        left ->
-            {X, Y - 1};
-        right ->
-            {X, Y + 1}
+            {X + 1, Y}
     end,
     case maps:is_key(Position, Grid) of
         false ->
@@ -82,12 +78,8 @@ choose(X) ->
 
 max_word_length({X, Y}, Direction, GridSize) ->
     case Direction of
-        up ->
-            X + 1;
+        across ->
+            GridSize - Y;
         down ->
-            GridSize - X;
-        left ->
-            Y + 1;
-        right ->
-            GridSize - Y
+            GridSize - X
     end.
